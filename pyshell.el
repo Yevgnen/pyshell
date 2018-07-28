@@ -108,6 +108,64 @@
                                   orig-args)
     (run-python nil nil t)))
 
+;; Stuffs set in `inferior-python-mode' ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
+(defun pyshell-eval-example-or-interrupt ()
+  "Better C-c C-c for `inferior-python-mode'."
+  (interactive)
+  (let ((line (thing-at-point 'line t))
+        (regex "^[ ]*\\(>>>\\|\\.\\.\\.\\) ")
+        (continue-regex "^[ ]*\\.\\.\\."))
+    (if (and line (string-match regex line))
+        (let ((lines))
+          (save-excursion
+            (while (string-match regex (thing-at-point 'line t))
+              (previous-line))
+            (next-line)
+            (while (string-match regex (thing-at-point 'line t))
+              (let ((line (string-trim (thing-at-point 'line t)))
+                    (last-line (nth 0 lines)))
+                (if (string-match continue-regex line)
+                    (setf (nth 0 lines) (concat last-line (substring line 4)))
+                  (push (substring line 4) lines)))
+              (next-line)))
+          (comint-send-string (get-buffer-process (current-buffer))
+                              (concat (mapconcat #'identity (reverse lines) ";")
+                                      "\n")))
+      (call-interactively #'comint-interrupt-subjob))))
+
+(defun pyshell-remove-start-args ()
+  (python-shell-send-string-no-output "import sys; sys.argv = sys.argv[:1]"))
+
+(defun pyshell-input-sender-hook ()
+  "Check certain shell commands.
+ Executes the appropriate behavior for certain commands."
+  (setq comint-input-sender
+        (lambda (proc command)
+          (cond
+           ;; Check for clear command and execute it.
+           ((string-match "^[ \t]*\\(clear\\|c\\)[ \t]*$" command)
+            (comint-send-string proc "\n")
+            (comint-clear-buffer))
+           ((string-match "^[ \t]*clc[ \t]*$" command)
+            (comint-send-string proc "%reset -f\n"))
+           ((string-match "^\\[\\(.*?\\)\\]\\.shape[ \t]*$" command)
+            (comint-send-string proc (format "[x.shape for x in %s]\n" (match-string 1 command))))
+           ((string-match "^plt\\.show[ \t]*()[ \t]*" command)
+            (comint-send-string proc "plt.show(block=False)\n"))
+           ;; Send other commands to the default handler.
+           (t (comint-simple-send proc command))))))
+
+(defun pyshell-filter-annoy-message (string)
+  (let* ((string (replace-regexp-in-string
+                  "\\(<ipython-input-[0-9]+-[a-zA-Z0-9]+>\\)? in <module>()\n-+> [0-9]+ import codecs, os;.*'exec'));\n\n"
+                  "" string)))
+    string))
+
+(defun pyshell-set-comint-filter ()
+  (make-local-variable 'comint-preoutput-filter-functions)
+  (add-hook 'comint-preoutput-filter-functions #'pyshell-filter-annoy-message))
+
 ;; Minor mode ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun pyshell-python-enable ()
   (advice-add 'python-shell-send-region :around #'pyshell-send-region)
@@ -119,13 +177,31 @@
   (advice-remove 'python-shell-send-buffer #'pyshell-send-buffer)
   (advice-remove 'python-shell-switch-to-shell #'pyshell-switch-to-shell))
 
+(defun pyshell-shell-enable ()
+  (add-hook 'inferior-python-mode-hook #'pyshell-remove-start-args)
+  (add-hook 'inferior-python-mode-hook #'pyshell-input-sender-hook)
+  (add-hook 'inferior-python-mode-hook #'pyshell-set-comint-filter))
+
+(defun pyshell-shell-disable ()
+  (remove-hook 'inferior-python-mode-hook #'pyshell-remove-start-args)
+  (remove-hook 'inferior-python-mode-hook #'pyshell-input-sender-hook)
+  (remove-hook 'inferior-python-mode-hook #'pyshell-set-comint-filter))
+
+(defun pyshell-enable ()
+  (pyshell-python-enable)
+  (pyshell-shell-enable))
+
+(defun pyshell-disable ()
+  (pyshell-python-disable)
+  (pyshell-shell-disable))
+
 ;;;###autoload
 (define-minor-mode pyshell-mode
   "Enhancements for `python-mode' and `inferior-python-mode'."
   :global t
   (if pyshell-mode
-      (pyshell-python-enable)
-    (pyshell-python-disable)))
+      (pyshell-enable)
+    (pyshell-disable)))
 
 (provide 'pyshell)
 
