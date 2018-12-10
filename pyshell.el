@@ -29,6 +29,10 @@
 
 (require 'python)
 
+(defcustom pyshell-switch-shell-after-send nil
+  "Whether switch to shell buffer after send."
+  :type 'boolean)
+
 (defun pyshell-pop-to-buffer-dwim (buffer &optional pop-to-buffer-function &rest args)
   (let ((window (get-buffer-window buffer 'all-frames))
         (pop-to-buffer-function (or pop-to-buffer-function #'pop-to-buffer)))
@@ -51,9 +55,10 @@
      (concat (format "__file__ = \"%s\"" (expand-file-name (buffer-file-name)))  "\n"))))
 
 (defun pyshell-switch-to-shell-maybe ()
-  (if-let* ((buffer (process-buffer (python-shell-get-process-or-error))))
-      (unless (get-buffer-window buffer t)
-        (python-shell-switch-to-shell))))
+  (if pyshell-switch-shell-after-send
+      (if-let* ((buffer (process-buffer (python-shell-get-process-or-error))))
+          (unless (get-buffer-window buffer t)
+            (python-shell-switch-to-shell)))))
 
 (defun pyshell-set-pydata-display ()
   (let* ((width (window-width (get-buffer-window (process-buffer (python-shell-get-process-or-error)) t)))
