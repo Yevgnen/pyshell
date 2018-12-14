@@ -33,6 +33,10 @@
   "Whether switch to shell buffer after send."
   :type 'boolean)
 
+(defcustom pyshell-set-pwd-before-send t
+  "Whether set pwd to current directory before send."
+  :type 'boolean)
+
 (defun pyshell-pop-to-buffer-dwim (buffer &optional pop-to-buffer-function &rest args)
   (let ((window (get-buffer-window buffer 'all-frames))
         (pop-to-buffer-function (or pop-to-buffer-function #'pop-to-buffer)))
@@ -45,9 +49,10 @@
 
 ;; Stuffs set int `python-mode' ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun pyshell-set-pwd-before-send ()
-  (if-let* ((pwd (and (buffer-file-name)
-                      (file-name-directory (buffer-file-name)))))
-      (python-shell-send-string-no-output (format "cd %s" (shell-quote-argument pwd)))))
+  (if pyshell-set-pwd-before-send
+      (if-let* ((pwd (and (buffer-file-name)
+                          (file-name-directory (buffer-file-name)))))
+          (python-shell-send-string-no-output (format "cd %s" (shell-quote-argument pwd))))))
 
 (defun pyshell-define-magic-variable-before-send ()
   (when (buffer-file-name)
