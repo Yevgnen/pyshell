@@ -167,14 +167,14 @@
            (t (comint-simple-send proc command))))))
 
 (defun pyshell-filter-annoy-message (string)
-  (let* ((string (replace-regexp-in-string
-                  "\\(<ipython-input-[0-9]+-[a-zA-Z0-9]+>\\)? in <module>()\n-+> [0-9]+ import codecs, os;.*'exec'));\n\n"
-                  "" string)))
-    string))
+  (when (derived-mode-p 'inferior-python-mode)
+    (let* ((string (replace-regexp-in-string
+                    "\\(<ipython-input-[0-9]+-[a-zA-Z0-9]+>\\)? in <module>\n-+> [0-9]+ import codecs, os.*?\n\n"
+                    "" string)))
+      string)))
 
 (defun pyshell-set-comint-filter ()
-  (make-local-variable 'comint-preoutput-filter-functions)
-  (add-hook 'comint-preoutput-filter-functions #'pyshell-filter-annoy-message))
+  (add-hook 'comint-preoutput-filter-functions #'pyshell-filter-annoy-message nil t))
 
 ;; Minor mode ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun pyshell-python-enable ()
