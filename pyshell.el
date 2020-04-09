@@ -37,6 +37,10 @@
   "Whether set pwd to current directory before send."
   :type 'boolean)
 
+(defcustom pyshell-adjust-pydata-display nil
+  "Whether to adjust numpy display options before send."
+  :type 'boolean)
+
 (defun pyshell-pop-to-buffer-dwim (buffer &optional pop-to-buffer-function &rest args)
   (let ((window (get-buffer-window buffer 'all-frames))
         (pop-to-buffer-function (or pop-to-buffer-function #'pop-to-buffer)))
@@ -66,6 +70,7 @@
             (python-shell-switch-to-shell)))))
 
 (defun pyshell-set-pydata-display ()
+  (interactive)
   (let* ((width (window-width (get-buffer-window (process-buffer (python-shell-get-process-or-error)) t)))
          (adj-width (- width 5))
          (code (mapconcat #'identity
@@ -87,7 +92,8 @@
 (defun pyshell-send-region (orig-func &rest args)
   (pyshell-set-pwd-before-send)
   (pyshell-define-magic-variable-before-send)
-  (pyshell-set-pydata-display)
+  (if pyshell-adjust-pydata-display
+      (pyshell-set-pydata-display))
   (apply orig-func args)
   (pyshell-switch-to-shell-maybe))
 
