@@ -37,10 +37,6 @@
   "Whether set pwd to current directory before send."
   :type 'boolean)
 
-(defcustom pyshell-adjust-pydata-display nil
-  "Whether to adjust numpy display options before send."
-  :type 'boolean)
-
 (defun pyshell-pop-to-buffer-dwim (buffer &optional pop-to-buffer-function &rest args)
   (let ((window (get-buffer-window buffer 'all-frames))
         (pop-to-buffer-function (or pop-to-buffer-function #'pop-to-buffer)))
@@ -69,31 +65,10 @@
           (unless (get-buffer-window buffer t)
             (python-shell-switch-to-shell)))))
 
-(defun pyshell-set-pydata-display ()
-  (interactive)
-  (let* ((width (window-width (get-buffer-window (process-buffer (python-shell-get-process-or-error)) t)))
-         (adj-width (- width 5))
-         (code (mapconcat #'identity
-                          `("try:"
-                            ;; numpy
-                            ,(format "    np.set_printoptions(precision=4, threshold=1000, linewidth=%d)" adj-width)
-                            ;; pandas
-                            "    pd.set_option('display.show_dimensions', True)"
-                            ,(format "    pd.set_option('display.max_rows', %d)" (- (window-height) 8))
-                            "    pd.set_option('expand_frame_repr', True)"
-                            "    pd.set_option('large_repr', 'truncate')"
-                            ,(format "    pd.set_option('display.width', %d)" adj-width)
-                            "except NameError:"
-                            "    pass")
-                          "\n")))
-    (python-shell-send-string-no-output code)))
-
 ;;;###autoload
 (defun pyshell-send-region (orig-func &rest args)
   (pyshell-set-pwd-before-send)
   (pyshell-define-magic-variable-before-send)
-  (if pyshell-adjust-pydata-display
-      (pyshell-set-pydata-display))
   (apply orig-func args)
   (pyshell-switch-to-shell-maybe))
 
