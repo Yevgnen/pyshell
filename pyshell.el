@@ -147,16 +147,6 @@
            ;; Send other commands to the default handler.
            (t (comint-simple-send proc command))))))
 
-(defun pyshell-filter-annoy-message (string)
-  (when (derived-mode-p 'inferior-python-mode)
-    (let* ((string (replace-regexp-in-string
-                    "\\(<ipython-input-[0-9]+-[a-zA-Z0-9]+>\\)? in <module>\n-+> [0-9]+ import codecs, os.*?\n\n"
-                    "" string)))
-      string)))
-
-(defun pyshell-set-comint-filter ()
-  (add-hook 'comint-preoutput-filter-functions #'pyshell-filter-annoy-message nil t))
-
 ;; Minor mode ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun pyshell-python-enable ()
   (advice-add 'python-shell-send-region :around #'pyshell-send-region)
@@ -170,13 +160,11 @@
 
 (defun pyshell-shell-enable ()
   (add-hook 'inferior-python-mode-hook #'pyshell-remove-start-args)
-  (add-hook 'inferior-python-mode-hook #'pyshell-input-sender-hook)
-  (add-hook 'inferior-python-mode-hook #'pyshell-set-comint-filter))
+  (add-hook 'inferior-python-mode-hook #'pyshell-input-sender-hook))
 
 (defun pyshell-shell-disable ()
   (remove-hook 'inferior-python-mode-hook #'pyshell-remove-start-args)
-  (remove-hook 'inferior-python-mode-hook #'pyshell-input-sender-hook)
-  (remove-hook 'inferior-python-mode-hook #'pyshell-set-comint-filter))
+  (remove-hook 'inferior-python-mode-hook #'pyshell-input-sender-hook))
 
 (defun pyshell-enable ()
   (pyshell-python-enable)
