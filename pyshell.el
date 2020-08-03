@@ -120,9 +120,10 @@
                     (setf (nth 0 lines) (concat last-line (substring line 4)))
                   (push (substring line 4) lines)))
               (next-line)))
-          (comint-send-string (get-buffer-process (current-buffer))
-                              (concat (mapconcat #'identity (reverse lines) ";")
-                                      "\n")))
+          (python-shell-send-string (concat (mapconcat #'identity (reverse lines) ";")
+                                            "\n")
+                                    (get-buffer-process (current-buffer)))
+          (goto-char (point-max)))
       (call-interactively #'comint-interrupt-subjob))))
 
 (defun pyshell-remove-start-args ()
