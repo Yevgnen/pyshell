@@ -141,8 +141,6 @@
             (comint-clear-buffer))
            ((string-match "^[ \t]*clc[ \t]*$" command)
             (comint-send-string proc "%reset -f\n"))
-           ((string-match "^\\[\\(.*?\\)\\]\\.shape[ \t]*$" command)
-            (comint-send-string proc (format "[x.shape for x in %s]\n" (match-string 1 command))))
            ((string-match "^plt\\.show[ \t]*()[ \t]*" command)
             (comint-send-string proc "plt.show(block=False)\n"))
            ;; Send other commands to the default handler.
