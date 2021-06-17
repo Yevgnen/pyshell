@@ -126,9 +126,6 @@
           (goto-char (point-max)))
       (call-interactively #'comint-interrupt-subjob))))
 
-(defun pyshell-remove-start-args ()
-  (python-shell-send-string-no-output "import sys; sys.argv = sys.argv[:1]"))
-
 (defun pyshell-input-sender-hook ()
   "Check certain shell commands.
  Executes the appropriate behavior for certain commands."
@@ -158,11 +155,9 @@
   (advice-remove 'python-shell-switch-to-shell #'pyshell-switch-to-shell))
 
 (defun pyshell-shell-enable ()
-  (add-hook 'inferior-python-mode-hook #'pyshell-remove-start-args)
   (add-hook 'inferior-python-mode-hook #'pyshell-input-sender-hook))
 
 (defun pyshell-shell-disable ()
-  (remove-hook 'inferior-python-mode-hook #'pyshell-remove-start-args)
   (remove-hook 'inferior-python-mode-hook #'pyshell-input-sender-hook))
 
 (defun pyshell-enable ()
