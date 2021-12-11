@@ -128,6 +128,7 @@
           (python-shell-send-string (concat (mapconcat #'identity (reverse lines) ";")
                                             "\n")
                                     (get-buffer-process (current-buffer)))
+          (push-mark)
           (goto-char (point-max)))
       (call-interactively #'comint-interrupt-subjob))))
 
